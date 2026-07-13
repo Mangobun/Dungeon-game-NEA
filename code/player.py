@@ -15,6 +15,7 @@ class Player(pygame.sprite.Sprite):
 
         self.rect = self.image.get_frect(center = pos)
         self.hitbox_rect = self.rect.inflate(-90, -90)
+        self.damage_rect = self.hitbox_rect.inflate(10, 90)
 
         # movement
         self.direction = pygame.Vector2() # default values are 0,0 so left empty
@@ -27,6 +28,14 @@ class Player(pygame.sprite.Sprite):
         self.attack_time = 0
         self.attack_hitbox = None
 
+        self.invincible = False
+        self.damage_time = 0
+        self.invincibility_duration = 2000
+
+        # health
+        self.max_health = 6
+        self.health = 6
+        
         # animation speed
         self.move_animation_speed = 5
         self.attack_animation_speed = 9
@@ -75,7 +84,9 @@ class Player(pygame.sprite.Sprite):
         self.collision('horizontal')
         self.hitbox_rect.y += self.direction.y * self.speed * dt
         self.collision('vertical')
+
         self.rect.center = self.hitbox_rect.center
+        self.damage_rect.center = self.hitbox_rect.center
 
     def attack_timer(self):
         if self.attacking:
@@ -84,19 +95,27 @@ class Player(pygame.sprite.Sprite):
                 self.attacking = False
                 self.attack_hitbox = None
 
+    def damage_timer(self):
+        if self.invincible:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.damage_time >= self.invincibility_duration:
+                self.invincible = False
+
     def collision(self, direction):
         for sprite in self.collision_sprites:
             if sprite.rect.colliderect(self.hitbox_rect):
                 if direction == 'horizontal':
-                    if self.direction.x > 0: self.hitbox_rect.right =  sprite.rect.left # moving right
+                    if self.direction.x > 0: self.hitbox_rect.right = sprite.rect.left # moving right
                     if self.direction.x < 0: self.hitbox_rect.left = sprite.rect.right # moving left
                 else:
-                    if self.direction.y < 0: self.hitbox_rect.top =  sprite.rect.bottom # moving up 
-                    if self.direction.y > 0: self.hitbox_rect.bottom =  sprite.rect.top # moving down 
+                    if self.direction.y < 0: self.hitbox_rect.top = sprite.rect.bottom # moving up 
+                    if self.direction.y > 0: self.hitbox_rect.bottom = sprite.rect.top # moving down 
 
     def get_attack_hitbox (self):
-        hitbox_width, hitbox_height = 60, 60
-        
+        hitbox_width, hitbox_height = 80, 70
+        if self.state in ('left', 'right'):
+            hitbox_width, hitbox_height = 60, 70
+            
         if self.state == 'right':
             return pygame.Rect(
                 self.hitbox_rect.right,
@@ -146,10 +165,20 @@ class Player(pygame.sprite.Sprite):
 
         # animate
         self.image = frames[int(self.frame_index) % len(frames)]
+
+        if self.invincible:
+            if pygame.time.get_ticks() // 100 % 2 == 0:
+                self.image.set_alpha(80)
+            else:
+                self.image.set_alpha(255)
+        else:
+            self.image.set_alpha(255)
+
         self.rect = self.image.get_frect(center = old_center)
 
     def update(self, dt):
         self.input()
         self.move(dt)
         self.attack_timer()
+        self.damage_timer()
         self.animate(dt)
