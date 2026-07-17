@@ -6,6 +6,7 @@ class UI:
         self.display_surface = pygame.display.get_surface()
         self.load_images()
 
+        self.font = pygame.font.Font(None, 40)
         
     def load_images(self):
         self.full_heart = pygame.image.load(join('images', 'hearts', 'health', 'full_heart.png')).convert_alpha()
@@ -16,7 +17,7 @@ class UI:
         self.half_heart = scale_image(self.half_heart, SCALE * 1.3)
         self.empty_heart = scale_image(self.empty_heart, SCALE * 1.3)
 
-    def display(self, health):
+    def display(self, health, score):
         for i in range(3):
             x = 25 + i * 90
             y = 25
@@ -31,3 +32,8 @@ class UI:
                 image = self.empty_heart
 
             self.display_surface.blit(image, (x, y))
+
+        score_surf = self.font.render(f"Score: {score}", True, "white")
+        score_rect = score_surf.get_rect(topright=(WINDOW_WIDTH - 25, 25))
+        self.display_surface.blit(score_surf, score_rect)
+        

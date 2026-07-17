@@ -5,6 +5,7 @@ from groups import AllSprites
 from support import scale_image, scale_pos
 from ui import UI
 from states import *
+from database import Database
 
 from pytmx.util_pygame import load_pygame
 from random import randint, choice
@@ -18,14 +19,20 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
         
-        # states
         self.game_state = 'menu'
         self.pause_start_time = 0
+        self.player_name = ""
 
+        # states
         self.main_menu = MainMenu(self.display_surface)
         self.instructions_screen = InstructionsScreen(self.display_surface)
         self.pause_menu = PauseMenu(self.display_surface)
         self.game_over_screen = GameOverScreen(self.display_surface)
+        self.high_score_screen = HighScoreScreen(self.display_surface)
+
+        # database
+        self.database = Database()
+        self.database.create_table()
 
         # groups 
         self.all_sprites = AllSprites()
@@ -41,6 +48,10 @@ class Game:
         
         # ui
         self.ui = UI()
+        self.survival_score = 0
+        self.enemy_score = 0
+        self.total_score = 0
+        self.score_start_time = pygame.time.get_ticks()
 
         # setup
         self.load_images()
@@ -107,6 +118,11 @@ class Game:
                 if enemy.death_time == 0 and enemy.hitbox_rect.colliderect(self.player.attack_hitbox):
                     enemy.destroy()
 
+                    if enemy.enemy_type == 'blob':
+                        self.enemy_score += 25
+                    elif enemy.enemy_type == 'bat':
+                        self.enemy_score += 50
+
     def player_collision(self):
         if not self.player.attacking and not self.player.invincible:
             for enemy in self.enemy_sprites:
@@ -123,6 +139,9 @@ class Game:
                 pickup.kill()
 
     def adjust_timers_after_pause(self, pause_duration):
+        # survival score timer
+        self.score_start_time += pause_duration
+
         # player attack timer
         if self.player.attacking:
             self.player.attack_time += pause_duration
@@ -147,6 +166,13 @@ class Game:
         self.pickup_sprites.empty()
         self.spawn_positions.clear()
 
+        self.survival_score = 0
+        self.enemy_score = 0
+        self.total_score = 0
+        self.score_start_time = pygame.time.get_ticks()
+
+        pygame.time.set_timer(self.enemy_event, self.enemy_spawn_interval)
+
         self.setup()
 
     def run(self):
@@ -164,14 +190,25 @@ class Game:
                         if selected_option == 'Play':
                             self.game_state = 'instructions'
 
+                        elif selected_option == 'High Scores':
+                            self.high_score_screen.high_scores = self.database.get_high_scores()
+                            self.game_state = 'high_scores'
+
                         elif selected_option == 'Exit':
                             self.running = False
+
+                    # high score
+                    elif self.game_state == 'high_scores':
+                        if event.key == pygame.K_ESCAPE:
+                            self.game_state = 'menu'
 
                     # instruction screen
                     elif self.game_state == 'instructions':
                         start_game = self.instructions_screen.input(event)
 
                         if start_game:
+                            self.player_name = self.instructions_screen.player_name
+                            self.score_start_time = pygame.time.get_ticks()
                             self.game_state = 'playing'
 
                     # escape to pause
@@ -235,13 +272,21 @@ class Game:
                             )
 
             if self.game_state == 'playing':
+                # score time
+                current_time = pygame.time.get_ticks()
+
+                self.survival_score = (current_time - self.score_start_time) // 100
+                self.total_score = self.survival_score + self.enemy_score
+
                 # update
                 self.all_sprites.update(dt)
                 self.attack_collision()
                 self.player_collision()
 
                 if self.player.health <= 0:
-                    self.game_over_screen.score = 0
+                    self.database.add_score(self.player_name, self.total_score)
+
+                    self.game_over_screen.score = self.total_score
                     self.game_over_screen.selected_option = 0
                     self.game_state = 'game_over'
 
@@ -250,7 +295,7 @@ class Game:
                 # draw
                 self.display_surface.fill(COLORS['background'])
                 self.all_sprites.draw(self.player.rect.center)
-                self.ui.display(self.player.health)
+                self.ui.display(self.player.health, self.total_score)
 
                 # temporary hitbox visibility
                 # if self.player.attack_hitbox:
@@ -262,20 +307,23 @@ class Game:
             elif self.game_state == 'menu':
                 self.main_menu.draw()
 
+            elif self.game_state == "high_scores":
+                self.high_score_screen.draw()
+
             elif self.game_state == 'instructions':
                 self.instructions_screen.draw()
 
             elif self.game_state == 'paused':
                 self.display_surface.fill(COLORS['background'])
                 self.all_sprites.draw(self.player.rect.center)
-                self.ui.display(self.player.health)
+                self.ui.display(self.player.health, self.total_score)
 
                 self.pause_menu.draw()
 
             elif self.game_state == 'game_over':
                 self.display_surface.fill(COLORS['background'])
                 self.all_sprites.draw(self.player.rect.center)
-                self.ui.display(self.player.health)
+                self.ui.display(self.player.health, self.total_score)
 
                 self.game_over_screen.draw()
 

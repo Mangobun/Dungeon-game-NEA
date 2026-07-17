@@ -40,6 +40,7 @@ class Enemy(pygame.sprite.Sprite):
         self.direction = pygame.Vector2()
 
         # attributes
+        self.enemy_type = enemy_type
         if enemy_type == 'bat':
             self.speed = 350
         elif enemy_type == 'blob':
