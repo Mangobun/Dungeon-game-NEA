@@ -1,14 +1,16 @@
 from settings import *
 
 class MainMenu:
-    def __init__(self, display_surface):
+    def __init__(self, display_surface, menu_click_sound, select_option_sound):
         self.display_surface = display_surface
         self.title_font = pygame.font.Font(None, 80)
         self.text_font = pygame.font.Font(None, 40)
-        
 
         self.options = ['Play', 'High Scores', 'Exit']
         self.selected_option = 0
+
+        self.menu_click_sound = menu_click_sound
+        self.select_option_sound = select_option_sound
 
     def draw(self):
         self.display_surface.fill(COLORS['background'])
@@ -30,12 +32,16 @@ class MainMenu:
     def input(self, event):
         if event.key == pygame.K_s or event.key == pygame.K_DOWN:
             self.selected_option += 1
+            self.menu_click_sound.play()
+
         if event.key == pygame.K_w or event.key == pygame.K_UP:
             self.selected_option -= 1
+            self.menu_click_sound.play()
 
         self.selected_option %= len(self.options)
 
         if event.key == pygame.K_RETURN:
+            self.select_option_sound.play()
             return self.options[self.selected_option]
 
 class InstructionsScreen:
@@ -94,7 +100,7 @@ class InstructionsScreen:
         return False
 
 class PauseMenu:
-    def __init__(self, display_surface):
+    def __init__(self, display_surface, menu_click_sound, select_option_sound):
         self.display_surface = display_surface
 
         self.title_font = pygame.font.Font(None, 70)
@@ -102,6 +108,9 @@ class PauseMenu:
 
         self.options = ['Resume', 'Main Menu']
         self.selected_option = 0
+
+        self.menu_click_sound = menu_click_sound
+        self.select_option_sound = select_option_sound
 
     def draw(self):
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
@@ -126,16 +135,20 @@ class PauseMenu:
     def input(self, event):
         if event.key == pygame.K_s or event.key == pygame.K_DOWN:
             self.selected_option += 1
+            self.menu_click_sound.play()
+
         if event.key == pygame.K_w or event.key == pygame.K_UP:
             self.selected_option -= 1
+            self.menu_click_sound.play()
 
         self.selected_option %= len(self.options)
 
         if event.key == pygame.K_RETURN:
+            self.select_option_sound.play()
             return self.options[self.selected_option]
 
 class GameOverScreen:
-    def __init__(self, display_surface):
+    def __init__(self, display_surface, menu_click_sound, select_option_sound):
         self.display_surface = display_surface
 
         self.title_font = pygame.font.Font(None, 80)
@@ -143,6 +156,9 @@ class GameOverScreen:
 
         self.options = ['Retry', 'Main Menu']
         self.selected_option = 0
+
+        self.menu_click_sound = menu_click_sound
+        self.select_option_sound = select_option_sound
 
         self.score = 0
 
@@ -172,12 +188,16 @@ class GameOverScreen:
     def input(self, event):
         if event.key == pygame.K_s or event.key == pygame.K_DOWN:
             self.selected_option += 1
+            self.menu_click_sound.play()
+
         if event.key == pygame.K_w or event.key == pygame.K_UP:
             self.selected_option -= 1
+            self.menu_click_sound.play()
 
         self.selected_option %= len(self.options)
 
         if event.key == pygame.K_RETURN:
+            self.select_option_sound.play()
             return self.options[self.selected_option]
 
 class HighScoreScreen:

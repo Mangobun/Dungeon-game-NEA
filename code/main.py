@@ -23,11 +23,13 @@ class Game:
         self.pause_start_time = 0
         self.player_name = ""
 
+        self.load_audio()
+        
         # states
-        self.main_menu = MainMenu(self.display_surface)
+        self.main_menu = MainMenu(self.display_surface, self.menu_click_sound, self.select_option_sound)
         self.instructions_screen = InstructionsScreen(self.display_surface)
-        self.pause_menu = PauseMenu(self.display_surface)
-        self.game_over_screen = GameOverScreen(self.display_surface)
+        self.pause_menu = PauseMenu(self.display_surface, self.menu_click_sound, self.select_option_sound)
+        self.game_over_screen = GameOverScreen(self.display_surface, self.menu_click_sound, self.select_option_sound)
         self.high_score_screen = HighScoreScreen(self.display_surface)
 
         # database
@@ -79,6 +81,22 @@ class Game:
                 surf = scale_image(surf)
                 self.heart_frames.append(surf)      
 
+    def load_audio(self):
+        # music
+        self.background_music_path = join('audio', 'background music.mp3')
+        self.normal_music_volume = 0.5
+        self.paused_music_volume = 0.15
+
+        # sound effects
+        self.sword_swing_sound = pygame.mixer.Sound(join('audio', 'sword_swing.mp3'))
+        self.damage_taken_sound = pygame.mixer.Sound(join('audio', 'damage_taken.mp3'))
+        self.enemy_hit_sound = pygame.mixer.Sound(join('audio', 'enemy_sword_hit.mp3'))
+        self.health_pickup_sound = pygame.mixer.Sound(join('audio', 'health_pickup.mp3'))
+        self.menu_click_sound = pygame.mixer.Sound(join('audio', 'menu_click.mp3'))
+        self.select_option_sound = pygame.mixer.Sound(join('audio', 'select_option.mp3'))
+        self.game_start_sound = pygame.mixer.Sound(join('audio', 'game_start.mp3'))
+        self.game_over_sound = pygame.mixer.Sound(join('audio', 'game_over.mp3'))
+
     def setup(self):
         map = load_pygame(join('data', 'maps', 'dungeon.tmx'))
 
@@ -107,7 +125,7 @@ class Game:
         for obj in map.get_layer_by_name('Entities'):
             if obj.name == 'Player':
                 x, y = scale_pos(obj.x, obj.y)
-                self.player = Player((x, y), self.all_sprites, self.collision_sprites)
+                self.player = Player((x, y), self.all_sprites, self.collision_sprites, self.sword_swing_sound)
             else:
                 x, y = scale_pos(obj.x, obj.y)
                 self.spawn_positions.append((x, y))
@@ -116,6 +134,7 @@ class Game:
         if self.player.attack_hitbox:
             for enemy in self.enemy_sprites:
                 if enemy.death_time == 0 and enemy.hitbox_rect.colliderect(self.player.attack_hitbox):
+                    self.enemy_hit_sound.play()
                     enemy.destroy()
 
                     if enemy.enemy_type == 'blob':
@@ -127,6 +146,8 @@ class Game:
         if not self.player.attacking and not self.player.invincible:
             for enemy in self.enemy_sprites:
                 if enemy.death_time == 0 and enemy.hitbox_rect.colliderect(self.player.damage_rect):
+                    self.damage_taken_sound.play()
+
                     self.player.health = max(self.player.health - 1, 0)
                     self.player.invincible = True
                     self.player.damage_time = pygame.time.get_ticks()
@@ -135,6 +156,8 @@ class Game:
     def pickup_collision(self):
         for pickup in self.pickup_sprites:
             if pickup.rect.colliderect(self.player.damage_rect):
+                self.health_pickup_sound.play()
+
                 self.player.health = min(self.player.health + 2, self.player.max_health)
                 pickup.kill()
 
@@ -207,9 +230,16 @@ class Game:
                         start_game = self.instructions_screen.input(event)
 
                         if start_game:
-                            self.player_name = self.instructions_screen.player_name
+                            self.player_name = self.instructions_screen.player_name.strip().title()
                             self.score_start_time = pygame.time.get_ticks()
+
+                            self.game_start_sound.play()
+
                             self.game_state = 'playing'
+
+                            pygame.mixer.music.load(self.background_music_path)
+                            pygame.mixer.music.set_volume(self.normal_music_volume)
+                            pygame.mixer.music.play(-1)
 
                     # escape to pause
                     elif self.game_state == 'playing':
@@ -217,6 +247,9 @@ class Game:
                             self.pause_start_time = pygame.time.get_ticks()
                             pygame.time.set_timer(self.enemy_event, 0)
                             self.pause_menu.selected_option = 0
+
+                            pygame.mixer.music.set_volume(self.paused_music_volume)
+
                             self.game_state = 'paused'
 
                     # pause menu
@@ -229,9 +262,12 @@ class Game:
                             self.adjust_timers_after_pause(pause_duration)
                             pygame.time.set_timer(self.enemy_event, self.enemy_spawn_interval)
 
+                            pygame.mixer.music.set_volume(self.normal_music_volume)
+
                             self.game_state = 'playing'
 
                         elif selected_option == 'Main Menu':
+                            pygame.mixer.music.stop()
                             self.reset_game()
                             self.game_state = 'menu'
 
@@ -240,10 +276,22 @@ class Game:
                         selected_option = self.game_over_screen.input(event)
 
                         if selected_option == 'Retry':
+                            self.game_over_sound.stop()
+                            
                             self.reset_game()
+
+                            self.game_start_sound.play()
+                            
                             self.game_state = 'playing'
 
+                            pygame.mixer.music.load(self.background_music_path)
+                            pygame.mixer.music.set_volume(self.normal_music_volume)
+                            pygame.mixer.music.play(-1)
+
                         elif selected_option == 'Main Menu':
+                            self.game_over_sound.stop()
+                            pygame.mixer.music.stop()
+                            
                             self.reset_game()
                             self.game_state = 'menu'
 
@@ -288,6 +336,10 @@ class Game:
 
                     self.game_over_screen.score = self.total_score
                     self.game_over_screen.selected_option = 0
+
+                    pygame.mixer.music.fadeout(800)
+                    self.game_over_sound.play()
+
                     self.game_state = 'game_over'
 
                 self.pickup_collision()

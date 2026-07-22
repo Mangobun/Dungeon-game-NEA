@@ -2,7 +2,7 @@ from settings import *
 from support import scale_image, scale_pos
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, collision_sprites):
+    def __init__(self, pos, groups, collision_sprites, sword_swing_sound):
         super().__init__(groups)
         self.load_images()
         self.state, self.frame_index = 'down', 0
@@ -23,6 +23,7 @@ class Player(pygame.sprite.Sprite):
         self.collision_sprites = collision_sprites
 
         # combat
+        self.sword_swing_sound = sword_swing_sound
         self.attacking = False
         self.attack_cooldown = 400 # milliseconds
         self.attack_time = 0
@@ -74,6 +75,7 @@ class Player(pygame.sprite.Sprite):
 
         # attack
         if keys[pygame.K_SPACE] and not self.attacking:
+            self.sword_swing_sound.play()
             self.attacking = True
             self.attack_time = pygame.time.get_ticks()
             self.attack_hitbox = self.get_attack_hitbox()
