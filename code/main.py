@@ -223,6 +223,7 @@ class Game:
                     # high score
                     elif self.game_state == 'high_scores':
                         if event.key == pygame.K_ESCAPE:
+                            self.menu_click_sound.play()
                             self.game_state = 'menu'
 
                     # instruction screen
