@@ -44,12 +44,12 @@ class Enemy(pygame.sprite.Sprite):
         if enemy_type == 'bat':
             self.speed = 350
         elif enemy_type == 'blob':
-            self.speed = 150
+            self.speed = 200
 
         if enemy_type == 'bat':
-            self.notice_radius = 250
+            self.notice_radius = 600
         elif enemy_type == 'blob':
-            self.notice_radius = 400
+            self.notice_radius = 600
 
         # timer
         self.death_time = 0
@@ -102,7 +102,7 @@ class Enemy(pygame.sprite.Sprite):
 
             # heart drop
             if self.player.health < self.player.max_health:
-                if randint(1, 100) <= 30:
+                if randint(1, 100) <= 10:
                     HeartPickup(self.rect.center, self.heart_frames, self.heart_groups)
 
             self.kill()

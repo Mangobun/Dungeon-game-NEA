@@ -37,6 +37,8 @@ class Database:
                 (score, name)
             )
 
+        self.connection.commit()
+
     def get_high_scores(self):
         self.cursor.execute("""
             SELECT name, score

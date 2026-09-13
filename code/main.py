@@ -44,7 +44,7 @@ class Game:
 
         # enemy timer
         self.enemy_event = pygame.event.custom_type()
-        self.enemy_spawn_interval = 1500
+        self.enemy_spawn_interval = 1000
         pygame.time.set_timer(self.enemy_event, self.enemy_spawn_interval)
         self.spawn_positions = []
         
@@ -200,7 +200,7 @@ class Game:
 
     def run(self):
         while self.running:
-            dt = self.clock.tick() / 1000
+            dt = self.clock.tick(120) / 1000
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -304,7 +304,7 @@ class Game:
                     for enemy in self.enemy_sprites:
                         distance = pygame.Vector2(enemy.rect.center).distance_to(spawn_pos)
 
-                        if distance < 350:
+                        if distance < 50:
                             can_spawn = False
 
                     if can_spawn:
