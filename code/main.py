@@ -14,8 +14,10 @@ class Game:
     def __init__(self):
         # setup
         pygame.init()
-        self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-        pygame.display.set_caption('Dungeon Game')
+        self.display_surface = pygame.display.set_mode(
+            (WINDOW_WIDTH, WINDOW_HEIGHT)
+        )
+        pygame.display.set_caption('Pixel Abyss')
         self.clock = pygame.time.Clock()
         self.running = True
         
@@ -98,7 +100,7 @@ class Game:
         self.game_over_sound = pygame.mixer.Sound(join('audio', 'game_over.mp3'))
 
     def setup(self):
-        map = load_pygame(join('data', 'maps', 'dungeon.tmx'))
+        map = load_pygame(join('data', 'maps', 'dungeon_copy.tmx'))
 
         for x, y, image in map.get_layer_by_name('Ground').tiles():
             image = scale_image(image)

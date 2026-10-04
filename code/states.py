@@ -15,7 +15,7 @@ class MainMenu:
     def draw(self):
         self.display_surface.fill(COLORS['background'])
 
-        title = self.title_font.render("Dungeon Game", True, "white")
+        title = self.title_font.render("Pixel Abyss", True, "white")
         title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 50))
         self.display_surface.blit(title, title_rect)
 
